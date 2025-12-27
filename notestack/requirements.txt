@@ -1,0 +1,11 @@
+flask
+firebase-admin
+google-generativeai
+google-api-core==2.25.2
+pypdf
+pdfplumber
+python-docx
+python-dotenv
+werkzeug
+gunicorn
+protobuf==4.25.8

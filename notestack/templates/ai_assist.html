@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/search">Search Notes</a>
+        <a href="/ai-assist" class="active">AI Assistance</a>
+        <a href="/upload">Upload Notes</a>
+        <a href="/library">My Library</a>
+    </aside>
+
+    <main class="main-content">
+        <div style="margin-bottom: 2rem;">
+            <h2 style="font-size: 1.75rem; color: var(--text-main); margin-bottom: 0.5rem;">AI Study Assistant</h2>
+            <p style="color: var(--text-muted);">Analyze your notes, generate summaries, and prepare with AI-powered
+                questions.</p>
+        </div>
+
+        <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <label for="note-select"
+                style="font-weight: 600; color: var(--text-main); display: block; margin-bottom: 0.75rem;">Select a Note
+                to Analyze:</label>
+            <div style="position: relative;">
+                <select id="note-select"
+                    style="width: 100%; padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.95rem; outline: none; background: white; cursor: pointer; transition: border-color 0.2s;">
+                    <option value="">-- Choose from your library --</option>
+                    {% for note in notes %}
+                    <option value="{{ note.id }}">{{ note.subjectName }} - {{ note.department|default(note.subjectCode,
+                        true) or 'General' }}{% if note.type == 'pyq' %} (PYQ){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="card" id="actions-area" style="display: none; padding: 1.5rem;">
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <button onclick="getSummary()" class="cta-button" style="flex: 1;">Generate Summary</button>
+                <button onclick="showQuestionOptions()" class="cta-button"
+                    style="flex: 1; background: var(--secondary-color);">Generate Questions</button>
+            </div>
+
+            <div id="question-options"
+                style="display: none; margin-bottom: 1.5rem; padding: 1.25rem; background: #f8fafc; border-radius: 10px; border: 1px solid var(--border-color);">
+                <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-end;">
+                    <div style="flex: 1; min-width: 120px;">
+                        <label
+                            style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">Mode</label>
+                        <select id="q-mode" onchange="updateCountLimits()"
+                            style="width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); outline: none;">
+                            <option value="objective">Objective (MCQ)</option>
+                            <option value="subjective">Subjective</option>
+                        </select>
+                    </div>
+
+                    <div id="marks-wrapper" style="display: none; flex: 1; min-width: 120px;">
+                        <label
+                            style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">Marks</label>
+                        <select id="q-marks"
+                            style="width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); outline: none;">
+                            <option value="1">1 Mark</option>
+                            <option value="2" selected>2 Marks</option>
+                            <option value="3">3 Marks</option>
+                            <option value="4">4 Marks</option>
+                            <option value="5">5 Marks</option>
+                            <option value="6">6 Marks</option>
+                        </select>
+                    </div>
+
+                    <div style="flex: 0.5; min-width: 80px;">
+                        <label
+                            style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">Count</label>
+                        <select id="q-count"
+                            style="width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); outline: none;">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+
+                    <button onclick="getQuestions()" class="cta-button" style="padding: 0.6rem 2rem;">Generate</button>
+                </div>
+            </div>
+
+            <div id="output-area"
+                style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                <!-- AI Results go here -->
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const noteSelect = document.getElementById('note-select');
+    const actionsArea = document.getElementById('actions-area');
+    const outputArea = document.getElementById('output-area');
+    const qOptions = document.getElementById('question-options');
+    const qCount = document.getElementById('q-count');
+    const marksWrapper = document.getElementById('marks-wrapper');
+
+    function updateCountLimits() {
+        const mode = document.getElementById('q-mode').value;
+        const max = mode === 'objective' ? 20 : 10;
+
+        marksWrapper.style.display = mode === 'subjective' ? 'block' : 'none';
+
+        let html = '';
+        for (let i = 1; i <= max; i++) {
+            html += `<option value="${i}">${i}</option>`;
+        }
+        qCount.innerHTML = html;
+    }
+
+    // Initialize counts
+    updateCountLimits();
+
+    noteSelect.addEventListener('change', () => {
+        outputArea.innerHTML = '';
+        if (noteSelect.value) {
+            actionsArea.style.display = 'block';
+        } else {
+            actionsArea.style.display = 'none';
+        }
+    });
+
+    function showQuestionOptions() {
+        qOptions.style.display = 'block';
+        outputArea.innerHTML = '';
+    }
+
+    async function getSummary() {
+        outputArea.innerHTML = '<p>Generating summary...</p>';
+        qOptions.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/generate_summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ noteId: noteSelect.value })
+            });
+            const data = await response.json();
+
+            if (data.short_summary) {
+                let html = `<h3>Short Summary</h3><p>${data.short_summary}</p>`;
+                if (data.detailed_summary && data.detailed_summary.length > 0) {
+                    html += `<h3>Detailed Points</h3><ul>`;
+                    data.detailed_summary.forEach(point => html += `<li>${point}</li>`);
+                    html += `</ul>`;
+                }
+                outputArea.innerHTML = html;
+            } else {
+                const errMsg = data.error || 'Failed to generate summary.';
+                outputArea.innerHTML = `<p style="color: red;">${errMsg}</p>`;
+            }
+        } catch (e) {
+            outputArea.innerHTML = `<p style="color: red;">Error: ${e.message}</p>`;
+        }
+    }
+
+    async function getQuestions() {
+        outputArea.innerHTML = '<p>Generating questions...</p>';
+        const mode = document.getElementById('q-mode').value;
+        const marks = document.getElementById('q-marks').value;
+        const count = document.getElementById('q-count').value;
+
+        try {
+            const response = await fetch('/api/generate_questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    noteId: noteSelect.value,
+                    mode: mode,
+                    marks: mode === 'subjective' ? marks : null,
+                    numQuestions: count
+                })
+            });
+            const data = await response.json();
+
+            if (data.questions && data.questions.length > 0) {
+                let html = `<h3>Generated Questions</h3>`;
+                data.questions.forEach((q, index) => {
+                    html += `<div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--primary-color); background: #f8fafc;">`;
+                    html += `<div style="display: flex; gap: 0.75rem; align-items: flex-start;">`;
+                    html += `<span style="background: var(--primary-color); color: white; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">${index + 1}</span>`;
+                    html += `<div style="flex: 1;">`;
+                    html += `<p style="font-weight: 600; font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.75rem;">${q.question} ${q.marks ? '<span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 400;">(' + q.marks + ' Marks)</span>' : ''}</p>`;
+
+                    if (q.type === 'objective' && q.options) {
+                        html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin: 1rem 0;">`;
+                        q.options.forEach(opt => html += `<div style="background: white; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.9rem; color: var(--text-main);">${opt}</div>`);
+                        html += `</div>`;
+                    }
+
+                    if (q.answer) {
+                        html += `<div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed var(--border-color);">`;
+                        html += `<p style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Solution</p>`;
+                        html += `<p style="color: var(--text-main); line-height: 1.6;">${q.answer}</p>`;
+                        html += `</div>`;
+                    }
+                    html += `</div></div></div>`;
+                });
+                outputArea.innerHTML = html;
+            } else {
+                const errMsg = data.error || 'No questions generated.';
+                outputArea.innerHTML = `<p style="color: red;">${errMsg}</p>`;
+            }
+        } catch (e) {
+            outputArea.innerHTML = `<p style="color: red;">Error: ${e.message}</p>`;
+        }
+    }
+
+    // Results clear on page navigation/refresh automatically because they are not saved in server session or localStorage
+    // But we can also clear them on "Back" or other actions if there were any.
+</script>
+{% endblock %}

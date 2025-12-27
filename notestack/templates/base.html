@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Notes Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo" style="display: flex; align-items: center;">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo"
+                style="height: 55px; margin-right: 12px; vertical-align: middle;">
+            NoteStack
+        </div>
+        <div class="nav-links {% if session.get('user') %}logged-in{% endif %}">
+            {% if current_user %}
+            <a href="/dashboard">Dashboard</a>
+            <a href="/upload" class="desktop-link">Upload</a>
+            <a href="/library" class="desktop-link">Library</a>
+
+            <div class="profile-badge-container" id="profileBadge">
+                {% if current_user.pfpUrl %}
+                <img src="{{ current_user.pfpUrl }}" class="profile-pfp-badge" alt="Profile">
+                {% else %}
+                <div class="profile-initial-badge">{{ current_user.name[0] | upper }}</div>
+                {% endif %}
+
+                <div class="profile-dropdown" id="profileDropdown">
+                    <a href="/profile">View Profile</a>
+                    <button onclick="window.location.href='/logout'">Logout</button>
+                </div>
+            </div>
+            {% else %}
+            <a href="/">Home</a>
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        // Profile dropdown logic
+        const badge = document.getElementById('profileBadge');
+        const dropdown = document.getElementById('profileDropdown');
+
+        if (badge) {
+            badge.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('show');
+            });
+
+            window.addEventListener('click', () => {
+                dropdown.classList.remove('show');
+            });
+        }
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="{{ url_for('static', filename='js/firebase_config.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

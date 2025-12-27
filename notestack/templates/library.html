@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/search">Search Notes</a>
+        <a href="/ai-assist">AI Assistance</a>
+        <a href="/upload">Upload Notes</a>
+        <a href="/library" class="active">My Library</a>
+    </aside>
+
+    <main class="main-content">
+        <div style="margin-bottom: 2rem;">
+            <h2 style="font-size: 1.75rem; color: var(--text-main); margin-bottom: 0.5rem;">My Library</h2>
+            <p style="color: var(--text-muted);">Access and manage your saved academic resources.</p>
+        </div>
+
+        <div class="card" style="padding: 1.25rem; margin-bottom: 2rem;">
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px; position: relative;">
+                    <span
+                        style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); font-size: 1.1rem; opacity: 0.5;">🔍</span>
+                    <input type="text" id="library-search" placeholder="Search in your library..."
+                        style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.8rem; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.95rem; outline: none; transition: all 0.2s;">
+                </div>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-muted);">Type:</span>
+                    <select id="type-filter"
+                        style="padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.95rem; outline: none; background: white; cursor: pointer;">
+                        <option value="all">All Materials</option>
+                        <option value="note">Notes Only</option>
+                        <option value="pyq">PYQs Only</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-grid" id="library-grid">
+            {% for note in notes %}
+            <div class="card" id="note-{{ note.id }}" data-type="{{ note.type|default('note') }}">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <h4 style="margin: 0; font-size: 1.1rem;">{{ note.subjectName }}</h4>
+                    <span class="badge badge-{{ note.type|default('note') }}">
+                        {{ note.type|default('Note') }}
+                    </span>
+                </div>
+                <p
+                    style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <span>📚</span> {{ note.department|default(note.subjectCode) }}
+                </p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Uploaded by {{
+                    note.uploaderName }}</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <a href="{{ note.fileUrl }}" target="_blank" onclick="logView('{{ note.id }}')" class="cta-button"
+                        style="font-size: 0.85rem;">View</a>
+                    <a href="{{ note.fileUrl }}"
+                        download="{{ note.subjectName }}_{{ note.department|default(note.subjectCode) }}.pdf"
+                        onclick="logView('{{ note.id }}')" class="cta-button"
+                        style="font-size: 0.85rem; background: #64748b;">Download</a>
+                    <a href="/ai-assist?noteId={{ note.id }}" class="cta-button"
+                        style="font-size: 0.85rem; background: var(--secondary-color);">AI Tools</a>
+                    <button onclick="removeNote('{{ note.id }}')" class="cta-button"
+                        style="font-size: 0.85rem; background: var(--error-color);">Remove</button>
+                </div>
+            </div>
+            {% else %}
+            <div class="card"
+                style="grid-column: 1/-1; text-align: center; padding: 3rem; background: transparent; border: 2px dashed var(--border-color);">
+                <p style="color: var(--text-muted);">No saved documents yet. <a href="/search"
+                        style="color: var(--primary-color); font-weight: 600;">Search Notes</a> to find content!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+
+<script>
+    // Library Search & Filter Logic
+    const librarySearch = document.getElementById('library-search');
+    const typeFilter = document.getElementById('type-filter');
+    const libraryGrid = document.getElementById('library-grid');
+    const noteCards = libraryGrid.getElementsByClassName('card');
+
+    function filterLibrary() {
+        const query = librarySearch.value.toLowerCase().trim();
+        const type = typeFilter.value;
+
+        Array.from(noteCards).forEach(card => {
+            const subjectName = card.querySelector('h4').textContent.toLowerCase();
+            const deptText = card.querySelector('p').textContent.toLowerCase();
+            const cardType = card.getAttribute('data-type');
+
+            const matchesSearch = subjectName.includes(query) || deptText.includes(query);
+            const matchesType = (type === 'all' || cardType === type);
+
+            if (matchesSearch && matchesType) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    librarySearch.addEventListener('input', filterLibrary);
+    typeFilter.addEventListener('change', filterLibrary);
+
+    function logView(noteId) {
+        fetch('/api/log_view', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ noteId })
+        });
+    }
+
+    function removeNote(noteId) {
+        if (!confirm('Are you sure you want to remove this note from your library?')) return;
+
+        fetch('/api/unsave_note', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ noteId })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.message) {
+                    document.getElementById(`note-${noteId}`).remove();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(err => alert('Error removing note'));
+    }
+</script>
+{% endblock %}

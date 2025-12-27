@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Cropping Modal -->
+<div id="cropperModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 500px; width: 90%; background: white; padding: 1.5rem; border-radius: 12px;">
+        <h3 style="margin-bottom: 1rem;">Adjust Profile Picture</h3>
+        <div style="height: 300px; overflow: hidden; margin-bottom: 1.5rem; background: #eee;">
+            <img id="imageToCrop" style="max-width: 100%;">
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button class="cta-button" onclick="closeCropper()" style="background: #64748b;">Cancel</button>
+            <button class="cta-button" id="cropSaveBtn">Save & Upload</button>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/search">Search Notes</a>
+        <a href="/ai-assist">AI Assistance</a>
+        <a href="/upload">Upload Notes</a>
+        <a href="/library">My Library</a>
+    </aside>
+
+    <main class="main-content" style="position: relative;">
+        <div class="profile-header">
+            <div class="profile-pfp-large-container">
+                {% if profile.pfpUrl %}
+                <img src="{{ profile.pfpUrl }}" class="profile-pfp-large" id="pfpDisplay" alt="Profile">
+                {% else %}
+                <div class="profile-initial-badge profile-pfp-large" id="pfpPlaceholder">{{ profile.name[0] | upper }}
+                </div>
+                {% endif %}
+                <label for="pfpUpload" class="pfp-upload-label">
+                    📷
+                    <input type="file" id="pfpUpload" hidden accept="image/*" onchange="uploadProfileFile(this, 'pfp')">
+                </label>
+            </div>
+
+            <div>
+                <div class="editable-name-container">
+                    <h2 id="userNameDisplay">{{ profile.name }}</h2>
+                    <span class="edit-icon" onclick="toggleEditName()">✍️</span>
+                </div>
+                <div id="editNameForm" style="display: none; gap: 0.5rem; margin-top: 0.5rem;">
+                    <input type="text" id="newNameInput" value="{{ profile.name }}"
+                        style="padding: 0.4rem; border-radius: 4px; border: 1px solid #ccc;">
+                    <button class="cta-button" onclick="saveName()"
+                        style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Save</button>
+                    <button class="cta-button" onclick="toggleEditName()"
+                        style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: #64748b;">Cancel</button>
+                </div>
+                <p style="color: var(--text-muted); margin-top: 0.5rem;">{{ profile.email }}</p>
+                <p style="font-size: 0.9rem; margin-top: 0.2rem; color: var(--text-muted);">{{ profile.enrollmentId }} |
+                    {{ profile.branch }}</p>
+
+                <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem;">
+                    <button onclick="togglePasswordChange()" class="cta-button"
+                        style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--secondary-color);">Change
+                        Password</button>
+                </div>
+
+                <div id="passwordForm" style="display: none; margin-top: 1rem; max-width: 300px;">
+                    <input type="password" id="newPassword" placeholder="New Password"
+                        style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 4px; border: 1px solid #ccc;">
+                    <button class="cta-button" onclick="savePassword()" style="width: 100%; padding: 0.5rem;">Update
+                        Password</button>
+                </div>
+            </div>
+        </div>
+
+        <h3>Academic Resources</h3>
+        <div class="academic-files-grid">
+            <!-- Time Table -->
+            <div class="file-box">
+                <h4>Time Table</h4>
+                {% if profile.timetableUrl %}
+                <p style="color: #10b981; margin-bottom: 1rem;">✅ Uploaded</p>
+                <div class="file-actions">
+                    <a href="{{ profile.timetableUrl }}" target="_blank" class="cta-button"
+                        style="padding: 0.4rem 1rem; font-size: 0.85rem;">View</a>
+                    <label class="cta-button"
+                        style="padding: 0.4rem 1rem; font-size: 0.85rem; background: #64748b; cursor: pointer;">
+                        Change
+                        <input type="file" hidden accept=".pdf" onchange="uploadProfileFile(this, 'timetable')">
+                    </label>
+                </div>
+                {% else %}
+                <p style="color: #64748b; margin-bottom: 1rem;">No file uploaded</p>
+                <label class="cta-button" style="padding: 0.5rem 1rem; font-size: 0.9rem; cursor: pointer;">
+                    Upload PDF
+                    <input type="file" hidden accept=".pdf" onchange="uploadProfileFile(this, 'timetable')">
+                </label>
+                {% endif %}
+            </div>
+
+            <!-- Syllabus -->
+            <div class="file-box">
+                <h4>Syllabus</h4>
+                {% if profile.syllabusUrl %}
+                <p style="color: #10b981; margin-bottom: 1rem;">✅ Uploaded</p>
+                <div class="file-actions">
+                    <a href="{{ profile.syllabusUrl }}" target="_blank" class="cta-button"
+                        style="padding: 0.4rem 1rem; font-size: 0.85rem;">View</a>
+                    <label class="cta-button"
+                        style="padding: 0.4rem 1rem; font-size: 0.85rem; background: #64748b; cursor: pointer;">
+                        Change
+                        <input type="file" hidden accept=".pdf" onchange="uploadProfileFile(this, 'syllabus')">
+                    </label>
+                </div>
+                {% else %}
+                <p style="color: #64748b; margin-bottom: 1rem;">No file uploaded</p>
+                <label class="cta-button" style="padding: 0.5rem 1rem; font-size: 0.9rem; cursor: pointer;">
+                    Upload PDF
+                    <input type="file" hidden accept=".pdf" onchange="uploadProfileFile(this, 'syllabus')">
+                </label>
+                {% endif %}
+            </div>
+        </div>
+
+        <h3 style="margin-top: 3rem;">My Uploaded Notes</h3>
+        <div class="notes-grid">
+            {% if my_notes %}
+            {% for note in my_notes %}
+            <div class="card" id="note-{{ note.id }}" data-type="{{ note.type|default('note') }}">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <h4 style="margin: 0; font-size: 1.1rem;">{{ note.subjectName }}</h4>
+                    <span class="badge badge-{{ note.type|default('note') }}">
+                        {{ note.type|default('Note') }}
+                    </span>
+                </div>
+                <p
+                    style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <span>📚</span> {{ note.department|default(note.subjectCode) }}
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1.5rem;">
+                    <a href="{{ note.fileUrl }}" target="_blank" onclick="logView('{{ note.id }}')" class="cta-button"
+                        style="font-size: 0.85rem; text-align: center;">View</a>
+                    <a href="{{ note.fileUrl }}"
+                        download="{{ note.subjectName }}_{{ note.department|default(note.subjectCode) }}.pdf"
+                        onclick="logView('{{ note.id }}')" class="cta-button"
+                        style="font-size: 0.85rem; background: #64748b; text-align: center;">Download</a>
+                    <a href="/ai-assist?noteId={{ note.id }}" class="cta-button"
+                        style="grid-column: span 2; font-size: 0.85rem; background: var(--secondary-color); text-align: center;">AI
+                        Tools</a>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color: #64748b;">You haven't uploaded any notes yet.</p>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+    let cropper = null;
+    let pendingFileType = '';
+    let pendingFileInput = null;
+
+    function toggleEditName() {
+        const display = document.getElementById('userNameDisplay');
+        const form = document.getElementById('editNameForm');
+        const isEditing = form.style.display === 'flex';
+        form.style.display = isEditing ? 'none' : 'flex';
+        display.style.display = isEditing ? 'block' : 'none';
+    }
+
+    async function saveName() {
+        const newName = document.getElementById('newNameInput').value;
+        const res = await fetch('/api/update_profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        });
+        const data = await res.json();
+        if (data.message) {
+            alert('Name updated successfully!');
+            location.reload();
+        } else {
+            alert(data.error);
+        }
+    }
+
+    function togglePasswordChange() {
+        const form = document.getElementById('passwordForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function savePassword() {
+        const pass = document.getElementById('newPassword').value;
+        if (pass.length < 6) return alert('Password must be at least 6 characters');
+
+        const res = await fetch('/api/change_password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newPassword: pass })
+        });
+        const data = await res.json();
+        if (data.message) {
+            alert('Password updated successfully!');
+            togglePasswordChange();
+        } else {
+            alert(data.error);
+        }
+    }
+
+    async function uploadProfileFile(input, type) {
+        if (!input.files || !input.files[0]) return;
+
+        if (type === 'pfp') {
+            openCropper(input);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        formData.append('type', type);
+
+        const res = await fetch('/api/upload_profile_file', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (data.message) {
+            alert(`${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully!`);
+            location.reload();
+        } else {
+            alert(data.error);
+        }
+    }
+
+    function openCropper(input) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const image = document.getElementById('imageToCrop');
+            image.src = e.target.result;
+            document.getElementById('cropperModal').style.display = 'flex';
+
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(image, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 1,
+            });
+        };
+        reader.readAsDataURL(file);
+        pendingFileType = 'pfp';
+    }
+
+    function closeCropper() {
+        document.getElementById('cropperModal').style.display = 'none';
+        if (cropper) cropper.destroy();
+    }
+
+    document.getElementById('cropSaveBtn').addEventListener('click', () => {
+        if (!cropper) return;
+
+        cropper.getCroppedCanvas({ width: 400, height: 400 }).toBlob(async (blob) => {
+            const formData = new FormData();
+            formData.append('file', blob, 'profile.jpg');
+            formData.append('type', 'pfp');
+
+            const res = await fetch('/api/upload_profile_file', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.message) {
+                alert('Profile picture updated successfully!');
+                location.reload();
+            } else {
+                alert(data.error);
+            }
+        }, 'image/jpeg');
+    });
+
+    function logView(noteId) {
+        fetch('/api/log_view', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ noteId })
+        });
+    }
+</script>
+{% endblock %}

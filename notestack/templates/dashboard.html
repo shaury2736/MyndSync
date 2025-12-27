@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <a href="/dashboard" class="active">Dashboard</a>
+        <a href="/search">Search Notes</a>
+        <a href="/ai-assist">AI Assistance</a>
+        <a href="/upload">Upload Notes</a>
+        <a href="/library">My Library</a>
+    </aside>
+
+    <main class="main-content">
+        <div class="card welcome-card">
+            <div style="flex: 1;">
+                <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Welcome back, {{ current_user.name }}!</h2>
+                <p style="font-size: 1rem; opacity: 0.9; margin-bottom: 1.5rem;">Your academic hub is ready. Explore new
+                    notes or continue your studies.</p>
+                <div style="display: flex; gap: 1rem;">
+                    <a href="/search" class="cta-button" style="background: white; color: var(--primary-color);">Explore
+                        Library</a>
+                    <a href="/upload" class="cta-button" style="background: rgba(255,255,255,0.2);">Upload Content</a>
+                </div>
+            </div>
+            <div style="font-size: 5rem; opacity: 0.8; margin-left: 2rem;">📚</div>
+        </div>
+
+        <div style="margin: 2rem 0;">
+            <h3 style="margin-bottom: 1.25rem; font-weight: 600; color: var(--text-main);">Academic Overview</h3>
+            <div class="stat-grid">
+                <div class="stat-card" style="border-top-color: var(--primary-color);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.5rem;">📚</span>
+                        <h4 style="margin: 0; font-weight: 600; font-size: 0.95rem; color: var(--text-muted);">
+                            Contributions</h4>
+                    </div>
+                    <p style="font-size: 2.25rem; font-weight: 700; margin: 0.5rem 0;">{{ stats.uploads }}</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Files uploaded by you</p>
+                </div>
+                <div class="stat-card" style="border-top-color: var(--success-color);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.5rem;">📂</span>
+                        <h4 style="margin: 0; font-weight: 600; font-size: 0.95rem; color: var(--text-muted);">
+                            Engagement</h4>
+                    </div>
+                    <p style="font-size: 2.25rem; font-weight: 700; margin: 0.5rem 0;">{{ stats.views }}</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Total resource views</p>
+                </div>
+                <div class="stat-card" style="border-top-color: var(--accent-color);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.5rem;">🗓️</span>
+                        <h4 style="margin: 0; font-weight: 600; font-size: 0.95rem; color: var(--text-muted);">Next
+                            Cycle</h4>
+                    </div>
+                    <p style="font-size: 1.25rem; font-weight: 600; margin: 0.5rem 0; color: var(--text-muted);">
+                        Semester Exams</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Coming soon</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 2.5rem;">
+            <h3 style="margin-bottom: 1.25rem; font-weight: 600; color: var(--text-main);">Recent Activity</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                {% for note in stats.recent_views %}
+                <div class="card" style="padding: 1.25rem; margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem;">
+                                <h4 style="margin: 0; font-size: 1.05rem;">{{ note.subjectName }}</h4>
+                                <span class="badge badge-{{ note.type|default('note') }}">
+                                    {{ note.type|default('Note') }}
+                                </span>
+                            </div>
+                            <p
+                                style="color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
+                                <span>📚</span> {{ note.department|default(note.subjectCode) }}
+                            </p>
+                        </div>
+                        <a href="{{ note.fileUrl }}" target="_blank" onclick="logView('{{ note.id }}')"
+                            class="cta-button">
+                            View
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card"
+                    style="text-align: center; padding: 3rem 1rem; background: transparent; border-style: dashed; grid-column: 1 / -1;">
+                    <p style="color: var(--text-muted); margin: 0;">No recent activity yet.</p>
+                    <a href="/search"
+                        style="color: var(--primary-color); font-weight: 600; font-size: 0.9rem; margin-top: 0.5rem; display: inline-block;">Browse
+                        Notes</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <script>
+            function logView(noteId) {
+                fetch('/api/log_view', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ noteId })
+                });
+            }
+        </script>
+    </main>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero" style="position: relative; overflow: hidden; height: 85vh; background: #fff;">
+    <div
+        style="position: absolute; inset: 0; background: url('/static/img/landing_bg.png') no-repeat center center/cover; opacity: 0.4; z-index: 0;">
+    </div>
+    <div
+        style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.8) 100%); z-index: 1;">
+    </div>
+
+    <div class="hero-content" style="position: relative; z-index: 2; padding: 4rem 2rem;">
+        <h1
+            style="font-size: 4rem; font-weight: 800; letter-spacing: -0.02em; text-shadow: 0 2px 10px rgba(255,255,255,0.5);">
+            Elevate Your Academic<br>Journey with <span style="color: var(--primary-color);">NoteStack</span></h1>
+        <p
+            style="font-size: 1.25rem; line-height: 1.6; color: var(--text-muted); max-width: 700px; margin: 0 auto 2.5rem; font-weight: 500;">
+            The premium hub for academic excellence. Share notes, access exam papers, and leverage AI-powered study
+            assistance.</p>
+        <div style="display: flex; gap: 1.5rem; justify-content: center; align-items: center; margin-bottom: 4rem;">
+            <a href="/register" class="cta-button"
+                style="padding: 1.2rem 3rem; font-size: 1.1rem; border-radius: 50px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);">Get
+                Started Now</a>
+            <a href="/login"
+                style="color: var(--text-main); font-weight: 700; text-decoration: none; font-size: 1rem;">Sign In to
+                Account →</a>
+        </div>
+
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; max-width: 1100px; margin: 0 auto;">
+            <div class="card"
+                style="padding: 2rem; text-align: left; border: 1px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); box-shadow: 0 15px 35px rgba(0,0,0,0.05); border-radius: 20px;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">📑</div>
+                <h3 style="font-size: 1.2rem; margin-bottom: 0.75rem; color: var(--text-main);">Resource Library</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5;">Curated notes and previous
+                    year papers at your fingertips.</p>
+            </div>
+            <div class="card"
+                style="padding: 2rem; text-align: left; border: 1px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); box-shadow: 0 15px 35px rgba(0,0,0,0.05); border-radius: 20px;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">✨</div>
+                <h3 style="font-size: 1.2rem; margin-bottom: 0.75rem; color: var(--text-main);">AI Assistance</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5;">Summarize complex notes and
+                    generate practice questions instantly.</p>
+            </div>
+            <div class="card"
+                style="padding: 2rem; text-align: left; border: 1px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); box-shadow: 0 15px 35px rgba(0,0,0,0.05); border-radius: 20px;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">🛡️</div>
+                <h3 style="font-size: 1.2rem; margin-bottom: 0.75rem; color: var(--text-main);">Secure Access</h3>
+                <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5;">Verified institutional access
+                    for the MITS student community.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
